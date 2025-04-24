@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use lazy_static::lazy_static;
 use phenopackets::schema::v2::core::OntologyClass;
 use crate::builder::builders::ontology_class_builder;
@@ -34,4 +36,34 @@ define_onset! {
     LATE_ONSET, "HP:0003584", "Late onset";
 }
 
-   		
+
+lazy_static! {
+    pub static ref ONSET_CLASSES_BY_LABEL: HashMap<String, OntologyClass> = {
+        let mut map = HashMap::new();
+        map.insert(ANTENATAL_ONSET.label.to_string(), ANTENATAL_ONSET.clone());
+        map.insert(EMBRYONAL_ONSET.label.to_string(), EMBRYONAL_ONSET.clone());
+        map.insert(FETAL_ONSET.label.to_string(), FETAL_ONSET.clone());
+        map.insert(LATE_FIRST_TRIMESTER_ONSET.label.to_string(), LATE_FIRST_TRIMESTER_ONSET.clone());
+        map.insert(SECOND_TRIMESTER_ONSET.label.to_string(), SECOND_TRIMESTER_ONSET.clone());
+        map.insert(THIRD_TRIMESTER_ONSET.label.to_string(), THIRD_TRIMESTER_ONSET.clone());
+        map.insert(CONGENITAL_ONSET.label.to_string(), CONGENITAL_ONSET.clone());
+        map.insert(NEONATAL_ONSET.label.to_string(), NEONATAL_ONSET.clone());
+        map.insert(INFANTILE_ONSET.label.to_string(), INFANTILE_ONSET.clone());
+        map.insert(CHILDHOOD_ONSET.label.to_string(), CHILDHOOD_ONSET.clone());
+        map.insert(JUVENILE_ONSET.label.to_string(), JUVENILE_ONSET.clone());
+        map.insert(ADULT_ONSET.label.to_string(), ADULT_ONSET.clone());
+        map.insert(YOUNG_ADULT_ONSET.label.to_string(), YOUNG_ADULT_ONSET.clone());
+        map.insert(EARLY_YOUNG_ADULT_ONSET.label.to_string(), EARLY_YOUNG_ADULT_ONSET.clone());
+        map.insert(INTERMEDIATE_YOUNG_ADULT_ONSET.label.to_string(), INTERMEDIATE_YOUNG_ADULT_ONSET.clone());
+        map.insert(LATE_YOUNG_ADULT_ONSET.label.to_string(), LATE_YOUNG_ADULT_ONSET.clone());
+        map.insert(MIDDLE_AGE_ONSET.label.to_string(), MIDDLE_AGE_ONSET.clone());
+        map.insert(LATE_ONSET.label.to_string(), LATE_ONSET.clone());
+        map
+    };
+}
+
+
+
+pub fn get_onset_by_label(label: &str) -> Option<&OntologyClass> {
+    ONSET_CLASSES_BY_LABEL.get(label)
+}
