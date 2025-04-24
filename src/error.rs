@@ -15,6 +15,10 @@ pub enum Error {
         msg: String,
     },
 
+    TimeElementError {
+        msg: String
+    }
+
 }
 
 
@@ -22,7 +26,8 @@ pub enum Error {
 impl core::fmt::Display for Error {
     fn fmt(&self, fmt: &mut core::fmt::Formatter) -> fmt::Result {
         match self {
-            Error::CurieError{msg} => {
+            Error::CurieError{msg} 
+            | Error::TimeElementError{msg} => {
                 write!(fmt, "{msg}" )
             },
             _ => write!(fmt, "{self:?}"),
