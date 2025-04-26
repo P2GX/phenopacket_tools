@@ -27,9 +27,9 @@ pub fn check_valid_curie(s: &str) -> Result<()> {
                 msg: format!("Invalid CURIE with no suffix: '{}'", s),
             });
         } else if let Some((_prefix, suffix)) = s.split_once(':') {
-            if !suffix.chars().all(char::is_numeric) {
+            if !suffix.chars().all(char::is_alphanumeric) {
                 return Err(Error::CurieError {
-                    msg: format!("Invalid CURIE with non-digit characters in suffix: '{}'", s),
+                    msg: format!("Invalid CURIE with non-alphanumeric characters in suffix: '{}'", s),
                 });
             }
         }
@@ -62,6 +62,7 @@ mod test {
     #[rstest]
     #[case("HP:0002162", "Low posterior hairline")]
     #[case("MONDO:0017309", "neonatal Marfan syndrome")]
+    #[case("NCIT:C2926", "Lung Non-Small Cell Carcinoma")]
     fn test_valid_terms(
         #[case] term_id: &str, 
         #[case] term_label: &str, 

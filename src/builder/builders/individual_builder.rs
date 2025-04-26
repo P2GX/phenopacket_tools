@@ -1,3 +1,20 @@
+use std::fmt::format;
+
+use chrono::NaiveDate;
+use chrono::Datelike;
+use phenopackets::schema::v2::core::vital_status;
+use phenopackets::schema::v2::core::Individual;
+use phenopackets::schema::v2::core::TimeElement;
+use phenopackets::schema::{v2::core::OntologyClass, v2::core::{KaryotypicSex, Sex, VitalStatus}};
+use prost_types::Timestamp;
+use crate::error::{self, Error, Result};
+use crate::constants::onset;
+
+use super::ontology_class_builder;
+use super::time_elements;
+use super::time_elements::time_element_from_str;
+use super::vital_status_builder::VitalStatusBuilder;
+
 
 /// IndividualBuilder 
 /// 
@@ -13,169 +30,206 @@
 /// - taxonomy (OntologyClass; 0..1) an OntologyClass representing the species (e.g., NCBITaxon:9615)
 pub struct IndividualBuilder {
     id: String,
+    alternate_ids: Vec<String>,
+    date_of_birth: Option<Timestamp>,
+    time_at_last_encounter: Option<TimeElement>,
+    vital_status: Option<VitalStatus>,
+    sex: Sex,
+    karyotypic_sex: KaryotypicSex,
+    gender: Option<OntologyClass>,
+    taxonomy: Option<OntologyClass>
 }
 
-/*
+impl Error {
+    fn individual_error(msg: &str) -> Self {
+        Error::IndividualError { msg: format!("{msg}") }
+    }
+}
 
-/**
- * An Individual in the version 2 phenopacket can have these attributes. Only the id is required.
- * <ol>
- *      <li>id (string)</li>
- *      <li>alternate_ids (a list)</li>
- *      <li>date_of_birth (timestamp)</li>
- *      <li>time_at_last_encounter (TimeElement) </li>
- *      <li>vital_status (VitalStatus)</li>
- *      <li>sex (Sex)</li>
- *      <li>karyotypic_sex (KaryotypicSex)</li>
- *      <li>taxonomy (Ontology term)</li>
- * </ol>
- * @author Peter N Robinson
- */
-public class IndividualBuilder {
 
-    private static final OntologyClass HOMO_SAPIENS = OntologyClassBuilder.ontologyClass("NCBITaxon:9606", "Homo sapiens");
 
-    private final Individual.Builder builder;
+pub fn timestamp(year: i32, month: u32, day: u32) -> Timestamp {
+    let naive = chrono::NaiveDate::from_ymd_opt(year, month, day)
+        .expect("Invalid date")
+        .and_hms_opt(0, 0, 0)
+        .expect("Invalid time");
 
-    private IndividualBuilder(String id) {
-        builder = Individual.newBuilder().setId(id);
+    Timestamp {
+        seconds: naive.and_utc().timestamp(),
+        nanos: naive.and_utc().timestamp_subsec_nanos() as i32,
+    }
+}
+
+
+impl IndividualBuilder {
+    pub fn new(id: impl Into<String>) -> Self {
+        Self{
+            id: id.into(),
+            alternate_ids: vec![],
+            date_of_birth: None,
+            time_at_last_encounter: None,
+            vital_status: None,
+            sex: phenopackets::schema::v2::core::Sex::UnknownSex,
+            karyotypic_sex: phenopackets::schema::v2::core::KaryotypicSex::UnknownKaryotype,
+            gender: None,
+            taxonomy: None
+        } 
     }
 
-    public static Individual of(String id) {
-        return Individual.newBuilder().setId(id).build();
+    pub fn add_alternate_id(mut self, alt_id: impl Into<String>) -> Self {
+        &self.alternate_ids.push(alt_id.into());
+        self
     }
 
-    public static IndividualBuilder builder(String id) {
-        return new IndividualBuilder(id);
+    pub fn add_all_alternate_ids(mut self, alt_id_list: &Vec<String>) -> Self {
+        &self.alternate_ids.extend(alt_id_list.clone());
+        self
     }
 
-    public IndividualBuilder addAlternateId(String altId) {
-        builder.addAlternateIds(altId);
-        return this;
+    pub fn date_of_birth(mut self, date: NaiveDate) -> Self {
+        let ts: Timestamp = timestamp(date.year(), date.month(), date.day());
+        self.date_of_birth = Some(ts);
+        self
+    }
+    
+    pub fn timestamp_at_last_encounter(mut self, timestamp_str: impl Into<String>) -> Result<Self> {
+        let ts = time_element_from_str(&timestamp_str.into())?;
+        self.time_at_last_encounter = Some(ts);
+        Ok(self)
     }
 
-    public IndividualBuilder addAllAlternateIds(List<String> altIdList) {
-        builder.addAllAlternateIds(altIdList);
-        return this;
+    pub fn age_at_last_encounter(mut self, time_element: TimeElement ) -> Self {
+        self.time_at_last_encounter = Some(time_element);
+        self
     }
 
-    public IndividualBuilder dateOfBirth(LocalDate localDate) {
-        Timestamp timestamp = TimestampBuilder.timestamp(localDate.getYear(), localDate.getMonthValue(), localDate.getDayOfMonth());
-        builder.setDateOfBirth(timestamp);
-        return this;
+    pub fn alive(mut self) -> Result<Self>
+    {
+        let vstatus = VitalStatusBuilder::alive().build()?;
+        self.vital_status = Some(vstatus);
+        Ok(self)
     }
 
-    public IndividualBuilder dateOfBirth(String dobirth) {
-        Timestamp dob = TimestampBuilder.fromISO8601(dobirth);
-        builder.setDateOfBirth(dob);
-        return this;
+    pub fn deceased(mut self) -> Result<Self>
+    {
+        let vstatus = VitalStatusBuilder::deceased().build()?;
+        self.vital_status = Some(vstatus);
+        Ok(self)
     }
 
-    public IndividualBuilder timestampAtLastEncounter(String timestamp) {
-        TimeElement t = TimeElements.timestamp(timestamp);
-        builder.setTimeAtLastEncounter(t);
-        return this;
+    pub fn vital_status(mut self, vital_status: VitalStatus) -> Self
+    {
+        self.vital_status = Some(vital_status);
+        self
     }
 
-    public IndividualBuilder ageAtLastEncounter(TimeElement timeElement) {
-        builder.setTimeAtLastEncounter(timeElement);
-        return this;
+    pub fn male(mut self) -> Self {
+        self.sex = Sex::Male;
+        self
     }
 
-    public IndividualBuilder ageAtLastEncounter(String iso8601) {
-        TimeElement t = TimeElements.age(iso8601);
-        builder.setTimeAtLastEncounter(t);
-        return this;
+    pub fn female(mut self) -> Self {
+        self.sex = Sex::Female;
+        self
     }
 
-    public IndividualBuilder alive() {
-        VitalStatus status = VitalStatus.newBuilder().setStatus(VitalStatus.Status.ALIVE).build();
-        builder.setVitalStatus(status);
-        return this;
+    pub fn unknown_sex(mut self) -> Self {
+        self.sex = Sex::UnknownSex;
+        self
     }
 
-    public IndividualBuilder deceased() {
-        VitalStatus status = VitalStatus.newBuilder().setStatus(VitalStatus.Status.DECEASED).build();
-        builder.setVitalStatus(status);
-        return this;
+    pub fn other_sex(mut self) -> Self {
+        self.sex = Sex::OtherSex;
+        self
     }
 
-    public IndividualBuilder vitalStatus(VitalStatus status) {
-        builder.setVitalStatus(status);
-        return this;
+   
+
+    pub fn homo_sapiens(mut self) -> Result<Self> {
+        let ontology_clz = ontology_class_builder::ontology_class("NCBITaxon:9606", "Homo sapiens")?;
+        self.taxonomy = Some(ontology_clz);
+        Ok(self)
     }
 
-    public IndividualBuilder male() {
-        builder.setSex(Sex.MALE);
-        return this;
+    pub fn build(self) -> Result<Individual> {
+        Ok(Individual { 
+            id: self.id,
+            alternate_ids: self.alternate_ids,
+            date_of_birth: self.date_of_birth,
+            time_at_last_encounter: self.time_at_last_encounter,
+            vital_status: self.vital_status,
+            sex: self.sex as i32,
+            karyotypic_sex: self.karyotypic_sex as i32,
+            gender: self.gender,
+            taxonomy: self.taxonomy,
+        })
+    }
+}
+
+#[allow(non_snake_case)]
+impl IndividualBuilder {
+    pub fn XX(mut self) -> Self {
+        self.karyotypic_sex = KaryotypicSex::Xx;
+        self
     }
 
-    public IndividualBuilder female() {
-        builder.setSex(Sex.FEMALE);
-        return this;
+    pub fn XY(mut self) -> Self {
+        self.karyotypic_sex = KaryotypicSex::Xy;
+        self
     }
 
-    public IndividualBuilder unknownSex() {
-        builder.setSex(Sex.UNKNOWN_SEX);
-        return this;
+    pub fn XO(mut self) -> Self {
+        self.karyotypic_sex = KaryotypicSex::Xo;
+        self
     }
 
-    public IndividualBuilder otherSex() {
-        builder.setSex(Sex.OTHER_SEX);
-        return this;
+    pub fn XXY(mut self) -> Self {
+        self.karyotypic_sex = KaryotypicSex::Xxy;
+        self
     }
 
-    public IndividualBuilder XX() {
-        builder.setKaryotypicSex(KaryotypicSex.XX);
-        return this;
+    pub fn XXX(mut self) -> Self {
+        self.karyotypic_sex = KaryotypicSex::Xxx;
+        self
     }
 
-    public IndividualBuilder XY() {
-        builder.setKaryotypicSex(KaryotypicSex.XY);
-        return this;
+    pub fn XXYY(mut self) -> Self {
+        self.karyotypic_sex = KaryotypicSex::Xxyy;
+        self
     }
 
-    public IndividualBuilder XO() {
-        builder.setKaryotypicSex(KaryotypicSex.XO);
-        return this;
+    pub fn XXXY(mut self) -> Self {
+        self.karyotypic_sex = KaryotypicSex::Xxxy;
+        self
     }
 
-    public IndividualBuilder XXY() {
-        builder.setKaryotypicSex(KaryotypicSex.XXY);
-        return this;
+    pub fn XXXX(mut self) -> Self {
+        self.karyotypic_sex = KaryotypicSex::Xxxx;
+        self
+    }
+}
+
+mod tests {
+    use crate::builder::builders::{ontology_class_builder, time_elements::time_element_from_str};
+
+    use super::*;
+    use phenopackets::schema::v2::core::time_element;
+    use rstest::rstest;
+
+    #[rstest]
+    fn test_ctor() {
+        let individual_id = "II:1";
+        let last_encounter = time_element_from_str("P2Y").unwrap();
+        let result = IndividualBuilder::new(individual_id)
+            .XX()
+            .age_at_last_encounter(last_encounter.clone())
+            .build();
+        assert!(result.is_ok());
+        let individual = result.unwrap();
+        assert_eq!(last_encounter, individual.time_at_last_encounter.unwrap());
+        assert_eq!(individual_id, individual.id);
+        assert_eq!(KaryotypicSex::Xx as i32, individual.karyotypic_sex);
     }
 
-    public IndividualBuilder XXX() {
-        builder.setKaryotypicSex(KaryotypicSex.XXX);
-        return this;
-    }
 
-    public IndividualBuilder XXYY() {
-        builder.setKaryotypicSex(KaryotypicSex.XXYY);
-        return this;
-    }
-
-    public IndividualBuilder XXXY() {
-        builder.setKaryotypicSex(KaryotypicSex.XXXY);
-        return this;
-    }
-
-    public IndividualBuilder XXXX() {
-        builder.setKaryotypicSex(KaryotypicSex.XXXX);
-        return this;
-    }
-
-    public IndividualBuilder taxonomy(OntologyClass taxon) {
-        builder.setTaxonomy(taxon);
-        return this;
-    }
-
-    public IndividualBuilder homoSapiens() {
-        builder.setTaxonomy(HOMO_SAPIENS);
-        return this;
-    }
-
-    public Individual build() {
-        return builder.build();
-    }
-} */
+}

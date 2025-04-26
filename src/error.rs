@@ -14,7 +14,9 @@ pub enum Error {
     CurieError {
         msg: String,
     },
-
+    IndividualError {
+        msg: String,
+    },
     TimeElementError {
         msg: String
     }
