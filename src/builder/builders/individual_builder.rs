@@ -209,6 +209,8 @@ impl IndividualBuilder {
     }
 }
 
+
+#[cfg(test)]
 mod tests {
     use crate::builder::builders::{ontology_class_builder, time_elements::time_element_from_str};
 
