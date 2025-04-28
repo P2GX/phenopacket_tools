@@ -1,5 +1,7 @@
-use std::sync::mpsc::RecvTimeoutError;
+//use std::sync::mpsc::RecvTimeoutError;
 
+use crate::error::{self, Error, Result};
+use crate::constants::onset::{self, *};
 use lazy_static::lazy_static;
 use phenopackets::ga4gh::vrs::v1::repeated_sequence_expression;
 use phenopackets::schema::v2::core::{time_element, Age, AgeRange, GestationalAge, TimeInterval};
@@ -15,8 +17,6 @@ lazy_static! {
 }
 
 
-use crate::error::{self, Error, Result};
-use crate::constants::onset::{self, *};
 
 /// Convert Ontology Class messages into TimeElements
 pub trait ToTimeElement {
@@ -215,6 +215,18 @@ pub fn time_element_from_str(value: &str)
         return Ok(TimeElement{element: Some(phenopackets::schema::v2::core::time_element::Element::OntologyClass(onset_clz.clone()))});
     }
    Err(Error::unrecognized_onset(value))
+}
+
+
+
+
+pub fn timestamp_from_iso8601(iso8601_str: &str) -> Result<Timestamp> {
+    let datetime: DateTime<Utc> = iso8601_str.parse()
+        .map_err(|e| Error::TimeElementError { msg:format!( "Could not parse {iso8601_str}") })?;
+    Ok(Timestamp {
+        seconds: datetime.timestamp(),
+        nanos: datetime.timestamp_subsec_nanos() as i32,
+    })
 }
 
 
