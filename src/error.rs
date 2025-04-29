@@ -1,14 +1,14 @@
 use std::{error::Error as StdError, fmt};
 use derive_more::{Display, From};
 use phenopackets::schema::v1::GenomicInterpretation;
-
+use serde::{Deserialize, Serialize};
 
 
 pub type Result<T> = core::result::Result<T, Error>;
 
 
 
-#[derive(Debug, From)]
+#[derive(Debug, From, Serialize, Deserialize)]
 pub enum Error {
     #[from]
     Custom(String),

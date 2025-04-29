@@ -5,6 +5,9 @@ use std::path::Path;
 mod bethlam_myopathy;
 use crate::bethlam_myopathy::bethlem_myopathy_phenopacket;
 
+
+
+
 /// A simple CLI example
 #[derive(Parser)]
 #[command(name = "p2t")]
@@ -27,5 +30,9 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
     let myopathy = bethlem_myopathy_phenopacket();
-    println!("{:?}", myopathy);
+    println!("{:?}", &myopathy);
+    let json = serde_json::to_string_pretty(&myopathy).unwrap();
+    println!("{}", json);
+    let yaml = serde_yaml::to_string(&myopathyq).unwrap();
+    println!("{}", yaml);
 }
