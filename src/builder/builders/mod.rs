@@ -1,4 +1,5 @@
 
+pub mod disease_builder;
 pub mod expressions;
 pub mod extensions;
 pub mod external_reference_builder;
