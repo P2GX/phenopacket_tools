@@ -2,7 +2,8 @@
 
 use clap::Parser;
 use std::path::Path;
-
+mod bethlam_myopathy;
+use crate::bethlam_myopathy::bethlem_myopathy_phenopacket;
 
 /// A simple CLI example
 #[derive(Parser)]
@@ -25,5 +26,6 @@ struct Cli {
 
 fn main() {
     let cli = Cli::parse();
-    println!("hello")
+    let myopathy = bethlem_myopathy_phenopacket();
+    println!("{:?}", myopathy);
 }

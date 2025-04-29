@@ -148,9 +148,9 @@ pub fn timestamp_from_datetime(datetime: DateTime<Utc>) -> TimeElement {
     }
 }
 
-pub fn timestamp_from_str(s: &str) -> Result<TimeElement> {
+pub fn timestamp_from_str(s: &str) -> Result<Timestamp> {
     let datetime = s.parse::<DateTime<Utc>>().map_err(|e| e.to_string())?;
-    Ok(timestamp_from_datetime(datetime))
+    Ok(to_prost_timestamp(datetime))
 }
 
 pub fn interval_from_datetimes(start: DateTime<Utc>, end: DateTime<Utc>) -> Result<TimeElement> {
@@ -191,7 +191,10 @@ pub fn time_element_from_str(value: &str)
     -> Result<TimeElement> 
 {
     if value.ends_with("Z") {
-        return timestamp_from_str(value);
+        let ts = timestamp_from_str(value)?;
+        return Ok(TimeElement {
+            element: Some(phenopackets::schema::v2::core::time_element::Element::Timestamp(ts)),
+        });
     }
     if value.starts_with("P") {
         return age(value);

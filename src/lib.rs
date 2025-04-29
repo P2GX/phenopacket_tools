@@ -4,5 +4,5 @@
 
 
 pub mod constants;
-mod error;
+pub mod error;
 pub mod builder;
