@@ -29,4 +29,22 @@ impl Expressions {
             version: String::default(),
         }
     }
+
+    /// A SPDI reference 
+    pub fn spdi(value: impl Into<String>) -> Expression {
+        Expression {
+            syntax: "spdi".to_string(),
+            value: value.into(),
+            version: String::default(),
+        }
+    }
+
+     /// An ISCN reference 
+    pub fn iscn(value: impl Into<String>) -> Expression {
+        Expression {
+            syntax: "iscn".to_string(),
+            value: value.into(),
+            version: String::default(),
+        }
+    }
 }

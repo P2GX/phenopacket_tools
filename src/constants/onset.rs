@@ -2,14 +2,14 @@ use std::collections::HashMap;
 
 use lazy_static::lazy_static;
 use phenopackets::schema::v2::core::OntologyClass;
-use crate::builder::builders::ontology_class_builder;
+use crate::builders::builder::Builder;
 
 /// Macro to define static OntologyClass constants for HPO Onset terms
 macro_rules! define_onset {
     ($($const_name:ident, $id:expr, $label:expr);* $(;)?) => {
         lazy_static! {
             $(
-                pub static ref $const_name: OntologyClass = ontology_class_builder::ontology_class($id, $label).unwrap();
+                pub static ref $const_name: OntologyClass = Builder::ontology_class($id, $label).unwrap();
             )*
         }
     };

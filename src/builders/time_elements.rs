@@ -18,6 +18,19 @@ lazy_static! {
 
 
 
+pub fn timestamp(year: i32, month: u32, day: u32) -> Timestamp {
+    let naive = chrono::NaiveDate::from_ymd_opt(year, month, day)
+        .expect("Invalid date")
+        .and_hms_opt(0, 0, 0)
+        .expect("Invalid time");
+
+    Timestamp {
+        seconds: naive.and_utc().timestamp(),
+        nanos: naive.and_utc().timestamp_subsec_nanos() as i32,
+    }
+}
+
+
 /// Convert Ontology Class messages into TimeElements
 pub trait ToTimeElement {
     fn to_time_element(&self) -> TimeElement;
@@ -93,6 +106,7 @@ define_time_element!(
 );
 
 
+/// Create a TimeElement to represent gestational age, e.g., 34w5d
 pub fn gestational_age(weeks: i32, days: i32) -> Result<TimeElement> {
     if days < 0 || days > 7 {
         return Err(Error::invalid_days(days));
@@ -107,7 +121,7 @@ pub fn gestational_age(weeks: i32, days: i32) -> Result<TimeElement> {
 pub fn age(iso8601duration: impl Into<String>) -> Result<TimeElement> {
     let iso = iso8601duration.into();
     if  ISO8601_RE.is_match(&iso) {
-        let age = Age{iso8601duration: iso};
+        let age = Age{iso8601duration: iso.to_string()};
         return Ok(TimeElement{element: Some(phenopackets::schema::v2::core::time_element::Element::Age(age))});
     } else {
         return Err(Error::invalid_iso8601(&iso));
@@ -127,8 +141,8 @@ pub fn age_range(
     if ! ISO8601_RE.is_match(&iso_end) {
         return Err(Error::invalid_iso8601(&iso_end));
     }
-    let start_age = Age{iso8601duration: iso_start};
-    let end_age = Age{iso8601duration: iso_end};
+    let start_age = Age{iso8601duration: iso_start.to_string()};
+    let end_age = Age{iso8601duration: iso_end.to_string()};
     let age_range = AgeRange {start: Some(start_age), end: Some(end_age)};
     Ok(TimeElement{element: Some(phenopackets::schema::v2::core::time_element::Element::AgeRange(age_range))})
 }

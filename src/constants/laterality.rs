@@ -1,7 +1,7 @@
 
 /// Constants for laterality of findings.
 
-
+use phenopackets::schema::v2::core::OntologyClass;
 
 
 pub fn right() -> OntologyClass {

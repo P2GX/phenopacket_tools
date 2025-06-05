@@ -1,3 +1,4 @@
+//! Custom errors for phenopacket_tools
 use std::{error::Error as StdError, fmt};
 use derive_more::{Display, From};
 use phenopackets::schema::v1::GenomicInterpretation;

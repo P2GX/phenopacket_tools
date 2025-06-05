@@ -1,5 +1,4 @@
 use phenopackets::schema::v2::core::OntologyClass;
-use crate::builder::builders::ontology_class_builder;
 
 /// Static constants for common allelic states.
 pub struct AllelicState;

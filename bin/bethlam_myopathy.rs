@@ -1,4 +1,4 @@
-use phenopacket_tools::{builder::builders::{diagnosis_builder::DiagnosisBuilder, expressions::Expressions, external_reference_builder::ExternalReferenceBuilder, gene_descriptor_builder::GeneDescriptorBuilder, genomic_interpretation_builder::GenomicInterpretationBuilder, individual_builder::IndividualBuilder, interpretation_builder::InterpretationBuilder, meta_data_builder::MetaDataBuilder, ontology_class_builder, resources, time_elements, variant_interpretation_builder::VariantInterpretationBuilder, variation_descriptor_builder::VariationDescriptorBuilder, vcf_record_builder::VcfRecordBuilder}, constants};
+use phenopacket_tools::{builders::builders::{diagnosis_builder::DiagnosisBuilder, expressions::Expressions, external_reference_builder::ExternalReferenceBuilder, gene_descriptor_builder::GeneDescriptorBuilder, genomic_interpretation_builder::GenomicInterpretationBuilder, individual_builder::IndividualBuilder, interpretation_builder::InterpretationBuilder, meta_data_builder::MetaDataBuilder, ontology_class_builder, resources, time_elements, variant_interpretation_builder::VariantInterpretationBuilder, variation_descriptor_builder::VariationDescriptorBuilder, builder::VcfRecordBuilder}, constants};
 
 use phenopackets::schema::v2::{core::{
         Diagnosis, Evidence, ExternalReference, GenomicInterpretation, Individual, Interpretation, MetaData, OntologyClass, PhenotypicFeature, Sex, TimeElement
@@ -6,7 +6,7 @@ use phenopackets::schema::v2::{core::{
 use phenopackets::schema::v2::core::time_element::Element;
 use std::collections::HashMap;
 
-use phenopacket_tools::builder::builders::resources::Resources;
+use phenopacket_tools::builders::builders::resources::Resources;
 use phenopacket_tools::error::{self, Error, Result};
 
 
