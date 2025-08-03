@@ -33,6 +33,6 @@ fn main() {
     println!("{:?}", &myopathy);
     let json = serde_json::to_string_pretty(&myopathy).unwrap();
     println!("{}", json);
-    let yaml = serde_yaml::to_string(&myopathyq).unwrap();
+    let yaml = serde_yaml::to_string(&myopathy).unwrap();
     println!("{}", yaml);
 }

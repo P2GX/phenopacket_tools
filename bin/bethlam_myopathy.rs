@@ -1,23 +1,19 @@
-use phenopacket_tools::{builders::builders::{diagnosis_builder::DiagnosisBuilder, expressions::Expressions, external_reference_builder::ExternalReferenceBuilder, gene_descriptor_builder::GeneDescriptorBuilder, genomic_interpretation_builder::GenomicInterpretationBuilder, individual_builder::IndividualBuilder, interpretation_builder::InterpretationBuilder, meta_data_builder::MetaDataBuilder, ontology_class_builder, resources, time_elements, variant_interpretation_builder::VariantInterpretationBuilder, variation_descriptor_builder::VariationDescriptorBuilder, builder::VcfRecordBuilder}, constants};
 
+
+use clap::builder::Str;
 use phenopackets::schema::v2::{core::{
         Diagnosis, Evidence, ExternalReference, GenomicInterpretation, Individual, Interpretation, MetaData, OntologyClass, PhenotypicFeature, Sex, TimeElement
     }, Phenopacket};
 use phenopackets::schema::v2::core::time_element::Element;
-use std::collections::HashMap;
+use std::{collections::HashMap, env::var};
 
-use phenopacket_tools::builders::builders::resources::Resources;
+use phenopacket_tools::{builders::{builder::Builder, expressions::Expressions, resources::{self, Resources}, time_elements}, constants::{self, allelic_state::AllelicState}};
 use phenopacket_tools::error::{self, Error, Result};
 
 
 pub fn bethlem_myopathy_phenopacket() -> Result<Phenopacket> {
-    let bethlem_myopathy = ontology_class_builder::ontology_class("OMIM:158810", "Bethlem myopathy 1")?;
-
-
-    let external_reference = ExternalReferenceBuilder::of("PMID:30808312",
-    "COL6A1 mutation leading to Bethlem myopathy with recurrent hematuria: a case report");
-        
-
+    let bethlem_myopathy = Builder::ontology_class("OMIM:158810", "Bethlem myopathy 1")?;
+    let external_reference = Builder::external_reference("PMID:30808312","COL6A1 mutation leading to Bethlem myopathy with recurrent hematuria: a case report");
     let evidence = Evidence {
         evidence_code: Some(OntologyClass {
             id: "ECO:0000033".to_string(),
@@ -27,12 +23,9 @@ pub fn bethlem_myopathy_phenopacket() -> Result<Phenopacket> {
         ..Default::default()
     };
 
-    let individual = IndividualBuilder::new("proband A")
-        .male()
-        .age_at_last_encounter(time_elements::age("P6Y3M")?)
-        .build()?;
-  
-
+    let mut individual = Builder::individual("proband A");
+    individual.set_sex(Sex::Male);
+    individual.time_at_last_encounter = Some(time_elements::age("P6Y3M")?);
     let geno = resources::Resources::geno_version("2020-03-08");
     let eco = Resources::eco_version("2022-08-05");
     let omim = Resources::omim_version("2022-11-23");
@@ -40,40 +33,37 @@ pub fn bethlem_myopathy_phenopacket() -> Result<Phenopacket> {
     
 
     let created_ts = time_elements::timestamp_from_str("2021-05-14T10:35:00Z")?;
-    let metadata = MetaDataBuilder::from_created(created_ts, "anonymous biocurator")
-        .add_resource(hpo_r)
-        .add_resource(geno)
-        .add_resource(eco)
-        .add_resource(omim)
-        .add_external_reference(external_reference)
-        .build();
+    let mut metadata = Builder::meta_data(created_ts, "anonymous biocurator");
+    metadata.resources.push(hpo_r);
+    metadata.resources.push(geno);
+    metadata.resources.push(eco);
+    metadata.resources.push(omim);
+    metadata.external_references.push(external_reference);
+   
 
-    let gene_descriptor = GeneDescriptorBuilder::builder("HGNC:2211", "COL6A1").build();
-        
-    let vcf_record = VcfRecordBuilder::builder("GRCh38", "chr21", 45989626, "G", "A").build();
+    let gene_descriptor = Builder::gene_descriptor("HGNC:2211", "COL6A1");
+    let vcf_record = Builder::vcf_record("GRCh38", "chr21", 45989626, "G", "A");
     let hgvs_c = Expressions::hgvs_cdna("NM_001848.2:c.877G>A");
-    let var_descriptor = VariationDescriptorBuilder::builder("variant id")
-        .add_expression(hgvs_c)
-        .vcf_record(vcf_record)
-        .gene_context(gene_descriptor)
-        .heterozygous()
-        .build();
+    let mut var_descriptor = Builder::variation_descriptor("variant id");
+    var_descriptor.expressions.push(hgvs_c);
+    var_descriptor.vcf_record = Some(vcf_record);
+    var_descriptor.gene_context = Some(gene_descriptor);
+    var_descriptor.allelic_state = Some(AllelicState::heterozygous());
+      
 
-    let variant_interpretation = VariantInterpretationBuilder::new(var_descriptor)
-        .pathogenic()
-        .build();
-    let genomic_interpretation = GenomicInterpretationBuilder::builder("arbitrary interpretation id")
-        .causative()
-        .variant_interpretation(variant_interpretation)?
-        .build()?;
-    let diagnosis = DiagnosisBuilder::new(bethlem_myopathy)
-        .add_genomic_interpretation(genomic_interpretation)
-        .build();
+    let variant_interpretation = Builder::variant_interpretation_acmg(phenopackets::schema::v2::core::AcmgPathogenicityClassification::Pathogenic, var_descriptor);
+    let genomic_i = Builder::genomic_interpretation_from_variant("id",
+            phenopackets::schema::v2::core::genomic_interpretation::InterpretationStatus::Causative,
+            variant_interpretation);
+   
+    let diagnosis = Diagnosis{
+        disease: Some( bethlem_myopathy),
+        genomic_interpretations: vec![genomic_i],
+    };
+    
 
-    let interpretation = InterpretationBuilder::new("arbitrary interpretation id")
-        .solved(diagnosis)
-        .build();
-
+    let interpretation = Builder::solved_interpretation("arbitrary interpretation id", diagnosis);
+ 
 
     // Create PhenotypicFeatures
     let phenotypic_features = vec![

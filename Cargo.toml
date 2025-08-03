@@ -1,7 +1,7 @@
 [package]
 name = "phenopacket_tools"
-version = "0.2.1"
-edition = "2024"
+version = "0.2.2"
+edition = "2021"
 keywords = ["GA4GH", "Phenopacket Schema", "Human Phenotype Ontology"]
 description = "Generate GA4GH phenopackets from tabular data"
 license = "BSD-3-Clause"
@@ -23,7 +23,7 @@ cli = ["dep:clap"]
 
 [dependencies]
 chrono = { version = "0.4", features = ["serde", "clock"] }
-clap = { version = "4.5.35", features = ["derive"], optional = true }
+clap = { version = "4.5.39", features = ["derive"], optional = true }
 derive_more = {version = "2.0.1", features = ["from", "display"]}
 lazy_static = "1.5.0"
 phenopackets = { version = "0.2.2-post1", features = ["serde"]}

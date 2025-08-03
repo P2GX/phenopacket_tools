@@ -149,6 +149,19 @@ impl Resources {
         res
     }
 
+
+    pub fn hgnc_version(version: &str) -> Resource {
+        let mut res = Self::base_resource(
+            "hgnc",
+            "HUGO Gene Nomenclature Committee",
+            "HGNC",
+            "https://www.genenames.org/data/gene-symbol-report/#!/hgnc_id/",
+            "https://www.genenames.org",
+        );
+        res.version = version.to_string();
+        res
+    }
+
     pub fn uo_version(version: &str) -> Resource {
         let mut res = Self::base_resource(
             "uo",
