@@ -11,8 +11,10 @@ use chrono::{DateTime, Utc};
 use prost_types::Timestamp;
 
 lazy_static! {
+    /// Accept ISO 8601 duration (age) strings with years, months, or days
     pub static ref ISO8601_RE: Regex = Regex::new(r"^P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)D)?$").unwrap();
-    pub static ref GESTATIONAL_AGE_RE: Regex = Regex::new(r"^(\d+)w(\d+)d$").unwrap();
+    /// Accept strings such as G32w2d, G14d4d, G17w (i.e., the days are optional)
+    pub static ref GESTATIONAL_AGE_RE: Regex = Regex::new(r"^G(\d+)w(?:([0-6])d)?$").unwrap();
     
 }
 
@@ -220,12 +222,13 @@ pub fn time_element_from_str(value: &str)
             .as_str()
             .parse()
             .map_err(|_| Error::invalid_gestational_age(value))?; 
-        let days = captures
-            .get(2)
-            .ok_or_else(|| Error::invalid_gestational_age(value))?  
-            .as_str()
-            .parse()
-            .map_err(|_| Error::invalid_gestational_age(value))?; 
+        let days: i32 = match captures.get(2) {
+            Some(m) => m
+                .as_str()
+                .parse()
+                .map_err(|_| Error::invalid_gestational_age(value))?,
+            None => 0,
+        };
         return gestational_age(weeks, days);
     } 
     if let Some(onset_clz) = onset::get_onset_by_label(value) {
@@ -290,15 +293,17 @@ mod test {
     }
 
     #[rstest]
-    #[case("33w2d", 33, 2)]
-    #[case("12w0d", 12, 0)]
-    #[case("8w5d", 8, 5)]
+    #[case("G33w2d", 33, 2)]
+    #[case("G12w0d", 12, 0)]
+    #[case("G8w5d", 8, 5)]
+    #[case("G8w", 8, 0)]
     fn test_valid_gestational_age_from_str(
         #[case] gestational_age: &str,
         #[case] weeks: i32, 
         #[case] days: i32)
     {
         let result = time_element_from_str(gestational_age);
+        println!("{:?}", result);
         assert!(result.is_ok());    
         let gestational_age_time_elem = result.unwrap();
         match gestational_age_time_elem.element {
